@@ -500,6 +500,14 @@ BOT_LOOP: Optional[asyncio.AbstractEventLoop] = None
 from aiogram.utils.keyboard import InlineKeyboardBuilder  # Убедитесь, что импорт есть в начале
 
 
+async def safe_edit_or_send(callback: CallbackQuery, text: str, reply_markup: InlineKeyboardMarkup) -> None:
+    try:
+        await callback.message.edit_text(text, reply_markup=reply_markup)
+    except TelegramBadRequest as exc:
+        logger.warning("Edit failed for callback %s: %s", callback.data, exc)
+        await callback.message.answer(text, reply_markup=reply_markup)
+
+
 def main_menu_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
@@ -508,7 +516,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text=BTN_SERVICES, callback_data="menu_services", icon_custom_emoji_id=EMOJI_SERVICES))
     builder.row(InlineKeyboardButton(text=BTN_CASES, callback_data="menu_cases", icon_custom_emoji_id=EMOJI_CASES))
     builder.row(InlineKeyboardButton(text=BTN_ABOUT, callback_data="menu_about", icon_custom_emoji_id=EMOJI_ABOUT))
-    builder.row(InlineKeyboardButton(text=BTN_CONTACT, callback_data="lead_start", icon_custom_emoji_id=EMOJI_CONTACT))
+    builder.row(InlineKeyboardButton(text=BTN_CONTACT, callback_data="menu_contact", style="success"))
 
     return builder.as_markup()
 
@@ -516,10 +524,9 @@ def main_menu_kb() -> InlineKeyboardMarkup:
 def services_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    builder.row(InlineKeyboardButton(text=BTN_DEV, callback_data="srv_dev", icon_custom_emoji_id=EMOJI_DEV))
-    builder.row(InlineKeyboardButton(text=BTN_AUTOMATION, callback_data="srv_automation",
-                                     icon_custom_emoji_id=EMOJI_AUTOMATION))
-    builder.row(InlineKeyboardButton(text=BTN_BACK, callback_data="menu_main"))
+    builder.row(InlineKeyboardButton(text=BTN_DEV, callback_data="srv_dev", style="primary"))
+    builder.row(InlineKeyboardButton(text=BTN_AUTOMATION, callback_data="srv_auto", style="success"))
+    builder.row(InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger"))
 
     return builder.as_markup()
 
@@ -527,7 +534,7 @@ def detail_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=BTN_DISCUSS, callback_data="menu_contact")],
-            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_services")]
+            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_services", style="danger")]
         ]
     )
 
@@ -535,7 +542,7 @@ def cases_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=BTN_DISCUSS, callback_data="menu_contact")],
-            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main")]
+            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger")]
         ]
     )
 
@@ -556,8 +563,8 @@ def contact_kb() -> ReplyKeyboardMarkup:
 def about_inline_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Перейти в канал", url=CHANNEL_URL)],
-            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main")]
+            [InlineKeyboardButton(text="Перейти в канал", url=CHANNEL_URL, style="primary")],
+            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger")]
         ]
     )
 
@@ -994,7 +1001,7 @@ async def handle_services(callback: CallbackQuery) -> None:
     await update_user(callback.from_user.id, interest_at=_ts(_utcnow()))
     await increment_action(callback.from_user.id, "services_menu")
     # Изменяем текущее сообщение вместо отправки нового
-    await callback.message.edit_text(TEXT_SERVICES, reply_markup=services_kb())
+    await safe_edit_or_send(callback, TEXT_SERVICES, services_kb())
     await callback.answer()
 
 
@@ -1003,7 +1010,7 @@ async def handle_cases(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await update_user(callback.from_user.id, interest_at=_ts(_utcnow()))
     await increment_action(callback.from_user.id, "cases")
-    await callback.message.edit_text(TEXT_CASES, reply_markup=cases_kb())
+    await safe_edit_or_send(callback, TEXT_CASES, cases_kb())
     await callback.answer()
 
 
@@ -1011,14 +1018,15 @@ async def handle_cases(callback: CallbackQuery) -> None:
 async def handle_about(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await increment_action(callback.from_user.id, "about")
-    await callback.message.edit_text(
+    await safe_edit_or_send(
+        callback,
         f'<tg-emoji emoji-id="5215344475039084599"></tg-emoji> Наш Telegram-канал:\n{CHANNEL_URL}',
-        reply_markup=about_inline_kb()
+        about_inline_kb(),
     )
     await callback.answer()
 
 
-@dp.callback_query(F.data == "menu_contact")
+@dp.callback_query(F.data.in_({"menu_contact", "lead_start"}))
 async def handle_start_lead(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await update_user(
@@ -1047,28 +1055,28 @@ async def handle_dev(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await update_user(callback.from_user.id, interest_at=_ts(_utcnow()))
     await increment_action(callback.from_user.id, "service_detail")
-    await callback.message.edit_text(TEXT_DEV, reply_markup=detail_kb())
+    await safe_edit_or_send(callback, TEXT_DEV, detail_kb())
     await callback.answer()
 
 
-@dp.callback_query(F.data == "srv_auto")
+@dp.callback_query(F.data.in_({"srv_auto", "srv_automation"}))
 async def handle_automation(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await update_user(callback.from_user.id, interest_at=_ts(_utcnow()))
     await increment_action(callback.from_user.id, "automation_detail")
-    await callback.message.edit_text(TEXT_AUTOMATION, reply_markup=detail_kb())
+    await safe_edit_or_send(callback, TEXT_AUTOMATION, detail_kb())
     await callback.answer()
 
 
-@dp.callback_query(F.data.in_({"back_main", "back_services"}))
+@dp.callback_query(F.data.in_({"back_main", "back_services", "menu_main"}))
 async def handle_back(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     if callback.data == "back_services":
         await increment_action(callback.from_user.id, "services_menu")
-        await callback.message.edit_text(TEXT_SERVICES, reply_markup=services_kb())
+        await safe_edit_or_send(callback, TEXT_SERVICES, services_kb())
     else:
         await increment_action(callback.from_user.id, "main_menu")
-        await callback.message.edit_text(TEXT_MAIN_MENU, reply_markup=main_menu_kb())
+        await safe_edit_or_send(callback, TEXT_MAIN_MENU.format(name=callback.from_user.first_name), main_menu_kb())
     await callback.answer()
 
 
