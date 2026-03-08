@@ -1038,6 +1038,8 @@ async def handle_cases(callback: CallbackQuery) -> None:
 async def handle_about(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await increment_action(callback.from_user.id, "about")
+    about_text = f'<tg-emoji emoji-id="5215344475039084599"></tg-emoji> Наш Telegram-канал:\n{CHANNEL_URL}'
+    await safe_edit_or_send(callback, about_text, about_inline_kb())
     await safe_edit_or_send(
         callback,
         f'<tg-emoji emoji-id="5215344475039084599"></tg-emoji> Наш Telegram-канал:\n{CHANNEL_URL}',
