@@ -168,9 +168,9 @@ EMOJI_AUTOMATION = "5327931798548665621"
 
 BTN_SERVICES = 'Услуги'
 BTN_CASES = 'Кейсы'
-BTN_ABOUT = 'О нас'
-BTN_CONTACT = 'Связаться с нами'
-BTN_BACK = "⬅️ Назад"
+BTN_ABOUT = '🔵 О нас'
+BTN_CONTACT = '🟢 Связаться с нами'
+BTN_BACK = "🔴 ⬅️ Назад"
 
 BTN_DEV = 'Разработка под ключ'
 BTN_AUTOMATION = 'Внедрение ИИ'
@@ -508,7 +508,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text=BTN_SERVICES, callback_data="menu_services", icon_custom_emoji_id=EMOJI_SERVICES))
     builder.row(InlineKeyboardButton(text=BTN_CASES, callback_data="menu_cases", icon_custom_emoji_id=EMOJI_CASES))
     builder.row(InlineKeyboardButton(text=BTN_ABOUT, callback_data="menu_about", icon_custom_emoji_id=EMOJI_ABOUT))
-    builder.row(InlineKeyboardButton(text=BTN_CONTACT, callback_data="lead_start", icon_custom_emoji_id=EMOJI_CONTACT))
+    builder.row(InlineKeyboardButton(text=BTN_CONTACT, callback_data="menu_contact", icon_custom_emoji_id=EMOJI_CONTACT))
 
     return builder.as_markup()
 
@@ -517,9 +517,9 @@ def services_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     builder.row(InlineKeyboardButton(text=BTN_DEV, callback_data="srv_dev", icon_custom_emoji_id=EMOJI_DEV))
-    builder.row(InlineKeyboardButton(text=BTN_AUTOMATION, callback_data="srv_automation",
+    builder.row(InlineKeyboardButton(text=BTN_AUTOMATION, callback_data="srv_auto",
                                      icon_custom_emoji_id=EMOJI_AUTOMATION))
-    builder.row(InlineKeyboardButton(text=BTN_BACK, callback_data="menu_main"))
+    builder.row(InlineKeyboardButton(text=BTN_BACK, callback_data="back_main"))
 
     return builder.as_markup()
 
@@ -1018,7 +1018,7 @@ async def handle_about(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-@dp.callback_query(F.data == "menu_contact")
+@dp.callback_query(F.data.in_({"menu_contact", "lead_start"}))
 async def handle_start_lead(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await update_user(
@@ -1051,7 +1051,7 @@ async def handle_dev(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-@dp.callback_query(F.data == "srv_auto")
+@dp.callback_query(F.data.in_({"srv_auto", "srv_automation"}))
 async def handle_automation(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     await update_user(callback.from_user.id, interest_at=_ts(_utcnow()))
@@ -1060,7 +1060,7 @@ async def handle_automation(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-@dp.callback_query(F.data.in_({"back_main", "back_services"}))
+@dp.callback_query(F.data.in_({"back_main", "back_services", "menu_main"}))
 async def handle_back(callback: CallbackQuery) -> None:
     await ensure_user(callback)
     if callback.data == "back_services":
