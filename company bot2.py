@@ -171,10 +171,10 @@ BTN_CASES = 'Кейсы'
 BTN_ABOUT = 'О нас'
 BTN_CONTACT = 'Связаться с нами'
 BTN_BACK = "⬅️ Назад"
-BTN_ABOUT = '🔵 О нас'
-BTN_CONTACT = '🔵 Связаться с нами'
-BTN_CONTACT = '🟢 Связаться с нами'
-BTN_BACK = "🔴 ⬅️ Назад"
+BTN_ABOUT = 'О нас'
+BTN_CONTACT = 'Связаться с нами'
+BTN_CONTACT = 'Связаться с нами'
+BTN_BACK = "⬅️ Назад"
 
 BTN_DEV = 'Разработка под ключ'
 BTN_AUTOMATION = 'Внедрение ИИ'
@@ -503,6 +503,32 @@ BOT_LOOP: Optional[asyncio.AbstractEventLoop] = None
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder  # Убедитесь, что импорт есть в начале
 
+def make_inline_button(
+    text: str,
+    *,
+    callback_data: Optional[str] = None,
+    url: Optional[str] = None,
+    icon_custom_emoji_id: Optional[str] = None,
+    style: Optional[str] = None,
+) -> InlineKeyboardButton:
+    payload: dict[str, Any] = {"text": text}
+    if callback_data is not None:
+        payload["callback_data"] = callback_data
+    if url is not None:
+        payload["url"] = url
+    if icon_custom_emoji_id is not None:
+        payload["icon_custom_emoji_id"] = icon_custom_emoji_id
+    if style is not None:
+        payload["style"] = style
+
+    try:
+        return InlineKeyboardButton(**payload)
+    except Exception as exc:
+        logger.warning("InlineKeyboardButton fallback for %s: %s", text, exc)
+        payload.pop("style", None)
+        payload.pop("icon_custom_emoji_id", None)
+        return InlineKeyboardButton(**payload)
+
 
 async def safe_edit_or_send(callback: CallbackQuery, text: str, reply_markup: InlineKeyboardMarkup) -> None:
     try:
@@ -517,6 +543,10 @@ def main_menu_kb() -> InlineKeyboardMarkup:
 
     # Кнопки с Custom Emoji ID
     builder.row(
+        make_inline_button(BTN_SERVICES, callback_data="menu_services", icon_custom_emoji_id=EMOJI_SERVICES))
+    builder.row(make_inline_button(BTN_CASES, callback_data="menu_cases", icon_custom_emoji_id=EMOJI_CASES))
+    builder.row(make_inline_button(BTN_ABOUT, callback_data="menu_about", icon_custom_emoji_id=EMOJI_ABOUT))
+    builder.row(make_inline_button(BTN_CONTACT, callback_data="menu_contact", style="success"))
         InlineKeyboardButton(text=BTN_SERVICES, callback_data="menu_services", icon_custom_emoji_id=EMOJI_SERVICES))
     builder.row(InlineKeyboardButton(text=BTN_CASES, callback_data="menu_cases", icon_custom_emoji_id=EMOJI_CASES))
     builder.row(InlineKeyboardButton(text=BTN_ABOUT, callback_data="menu_about", icon_custom_emoji_id=EMOJI_ABOUT))
@@ -530,6 +560,9 @@ def main_menu_kb() -> InlineKeyboardMarkup:
 def services_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
+    builder.row(make_inline_button(BTN_DEV, callback_data="srv_dev", style="primary"))
+    builder.row(make_inline_button(BTN_AUTOMATION, callback_data="srv_auto", style="success"))
+    builder.row(make_inline_button(BTN_BACK, callback_data="back_main", style="danger"))
     builder.row(InlineKeyboardButton(text=BTN_DEV, callback_data="srv_dev", style="primary"))
     builder.row(InlineKeyboardButton(text=BTN_AUTOMATION, callback_data="srv_auto", style="success"))
     builder.row(InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger"))
@@ -547,6 +580,8 @@ def services_kb() -> InlineKeyboardMarkup:
 def detail_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [make_inline_button(BTN_DISCUSS, callback_data="menu_contact")],
+            [make_inline_button(BTN_BACK, callback_data="back_services", style="danger")]
             [InlineKeyboardButton(text=BTN_DISCUSS, callback_data="menu_contact")],
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_services", style="danger")]
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_services")]
@@ -556,6 +591,8 @@ def detail_kb() -> InlineKeyboardMarkup:
 def cases_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [make_inline_button(BTN_DISCUSS, callback_data="menu_contact")],
+            [make_inline_button(BTN_BACK, callback_data="back_main", style="danger")]
             [InlineKeyboardButton(text=BTN_DISCUSS, callback_data="menu_contact")],
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger")]
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main")]
@@ -565,6 +602,7 @@ def cases_kb() -> InlineKeyboardMarkup:
 def budget_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [make_inline_button(opt, callback_data=f"budget_{i}")] for i, opt in enumerate(BUDGET_OPTIONS)
             [InlineKeyboardButton(text=opt, callback_data=f"budget_{i}")] for i, opt in enumerate(BUDGET_OPTIONS)
         ]
     )
@@ -579,6 +617,8 @@ def contact_kb() -> ReplyKeyboardMarkup:
 def about_inline_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [make_inline_button("Перейти в канал", url=CHANNEL_URL, style="primary")],
+            [make_inline_button(BTN_BACK, callback_data="back_main", style="danger")]
             [InlineKeyboardButton(text="Перейти в канал", url=CHANNEL_URL, style="primary")],
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger")]
             [InlineKeyboardButton(text="Перейти в канал", url=CHANNEL_URL)],
