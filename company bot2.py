@@ -169,6 +169,7 @@ EMOJI_AUTOMATION = "5327931798548665621"
 BTN_SERVICES = 'Услуги'
 BTN_CASES = 'Кейсы'
 BTN_ABOUT = '🔵 О нас'
+BTN_CONTACT = '🔵 Связаться с нами'
 BTN_CONTACT = '🟢 Связаться с нами'
 BTN_BACK = "🔴 ⬅️ Назад"
 
@@ -508,6 +509,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text=BTN_SERVICES, callback_data="menu_services", icon_custom_emoji_id=EMOJI_SERVICES))
     builder.row(InlineKeyboardButton(text=BTN_CASES, callback_data="menu_cases", icon_custom_emoji_id=EMOJI_CASES))
     builder.row(InlineKeyboardButton(text=BTN_ABOUT, callback_data="menu_about", icon_custom_emoji_id=EMOJI_ABOUT))
+    builder.row(InlineKeyboardButton(text=BTN_CONTACT, callback_data="menu_contact", icon_custom_emoji_id=EMOJI_CONTACT, style="success"))
     builder.row(InlineKeyboardButton(text=BTN_CONTACT, callback_data="menu_contact", icon_custom_emoji_id=EMOJI_CONTACT))
 
     return builder.as_markup()
@@ -516,6 +518,10 @@ def main_menu_kb() -> InlineKeyboardMarkup:
 def services_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
+    builder.row(InlineKeyboardButton(text=BTN_DEV, callback_data="srv_dev", icon_custom_emoji_id=EMOJI_DEV, style="primary"))
+    builder.row(InlineKeyboardButton(text=BTN_AUTOMATION, callback_data="srv_auto",
+                                     icon_custom_emoji_id=EMOJI_AUTOMATION, style="success"))
+    builder.row(InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger"))
     builder.row(InlineKeyboardButton(text=BTN_DEV, callback_data="srv_dev", icon_custom_emoji_id=EMOJI_DEV))
     builder.row(InlineKeyboardButton(text=BTN_AUTOMATION, callback_data="srv_auto",
                                      icon_custom_emoji_id=EMOJI_AUTOMATION))
@@ -527,6 +533,7 @@ def detail_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=BTN_DISCUSS, callback_data="menu_contact")],
+            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_services", style="danger")]
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_services")]
         ]
     )
@@ -535,6 +542,7 @@ def cases_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=BTN_DISCUSS, callback_data="menu_contact")],
+            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger")]
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main")]
         ]
     )
@@ -556,6 +564,8 @@ def contact_kb() -> ReplyKeyboardMarkup:
 def about_inline_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [InlineKeyboardButton(text="Перейти в канал", url=CHANNEL_URL, style="primary")],
+            [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main", style="danger")]
             [InlineKeyboardButton(text="Перейти в канал", url=CHANNEL_URL)],
             [InlineKeyboardButton(text=BTN_BACK, callback_data="back_main")]
         ]
